@@ -1,8 +1,18 @@
-Modified mod 7 to also average the direction. 
+This is a modification of speed_estimation.py file, which can be found in ultralytics/solutions folder. Copy the code below into the current speed_estimation.py, then call on speed estimation as directed in YOLOxSpeedEstimation or in: https://docs.ultralytics.com/guides/speed-estimation/#speedestimator-arguments.
 
-So, the speed and direction are now calculated between [a certain number of] frames, then this number is averaged between [a number of] recorded calculations. 
+With this, when speed estimation is called, the display shows the speed of detected objects in pixels per frame and the direction of the object as an angle in degrees. Both are calculated from the centroids of the bounding boxes, considering the movement between a certain number of frames and then averaged over a number of recorded speeds and directions. 
 
-Code:
+The modification changes most of the 'process' function in speed_estimation.py, as well as adds a few new dictionaries to __init__ and a new function called get_direction_and_angle.
+The modifications in the process function are the following:
+    - Extract the centre of the bounding box as x and y coordinates and store them as the current_position
+    - in -- Speed Estimation :
+        - Get pos_start and pos_end as the first and last positions of an object between a certain number             of frames (25)
+        - Compute the displacement between the two positions and convert it into speed in pixels per frame,           by dividing the displacement with the number of frames
+        - Take the average of the last ten 'speeds' and store it
+    - in --- Direction Estimation:
+        - Same process, the angle is calculated using the function get_direction_and_angle
+
+The code for speed_estimation.py:
 
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
@@ -67,7 +77,16 @@ class SpeedEstimator(BaseSolution):
 
 
     def get_direction_and_angle(self, prev_pos, curr_pos):
-        """Calculate direction angle and arrow symbol between two points."""
+        """Calculate direction angle and arrow symbol between two points.
+        
+        Args:
+            prev_pos : the position of the bounding box centroid from the previous frame
+            curr_pos : the position of the bounding box centroid from the current frame 
+        
+        Returns:
+            "→" : the arrow of the direction 
+            angle_deg : the angle of the direction in degrees
+        """
         dx, dy = curr_pos[0] - prev_pos[0], curr_pos[1] - prev_pos[1]
         angle_rad = np.arctan2(-dy, dx)  # Negative y since image origin is top-left
         angle_deg = np.degrees(angle_rad) % 360
